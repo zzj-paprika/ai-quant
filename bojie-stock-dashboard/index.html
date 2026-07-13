@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博杰股份(002975.SZ) K线图</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js">
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            padding: 20px 24px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .header-left h1 {
+            font-size: 24px;
+            color: #1a1a2e;
+        }
+        .header-left h1 span {
+            color: #888;
+            font-size: 14px;
+            font-weight: 400;
+            margin-left: 8px;
+        }
+        .header-left .sub {
+            color: #888;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .header-right .price {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .header-right .price.up {
+            color: #e74c3c;
+        }
+        .header-right .price.down {
+            color: #27ae60;
+        }
+        .header-right .change {
+            font-size: 14px;
+            margin-top: 2px;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            text-align: center;
+        }
+        .stat-card .label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+        .stat-card .value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        .stat-card .value.up {
+            color: #e74c3c;
+        }
+        .stat-card .value.down {
+            color: #27ae60;
+        }
+        .chart-wrapper {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            margin-bottom: 20px;
+        }
+        #klineChart {
+            width: 100%;
+            height: 520px;
+        }
+        #volumeChart {
+            width: 100%;
+            height: 140px;
+        }
+        .footer {
+            text-align: center;
+            color: #bbb;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .period-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .period-selector button {
+            padding: 6px 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.2s;
+        }
+        .period-selector button:hover {
+            background: #e8f4fd;
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        .period-selector button.active {
+            background: #1890ff;
+            border-color: #1890ff;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>博杰股份 <span>002975.SZ</span></h1>
+                <div class="sub">工业自动化设备 · 深交所主板</div>
+            </div>
+            <div class="header-right" id="headerPrice">
+                <div class="price up">120.80</div>
+                <div class="change up">+0.82 (+0.68%)</div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card">
+                <div class="label">近一年涨幅</div>
+                <div class="value up" id="yearReturn">+259.6%</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">近一年最高</div>
+                <div class="value" id="yearHigh">157.97</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">近一年最低</div>
+                <div class="value" id="yearLow">33.30</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">年化波动率</div>
+                <div class="value" id="volatility">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">日均换手</div>
+                <div class="value" id="avgTurnover">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">数据区间</div>
+                <div class="value" id="dateRange" style="font-size:14px;">—</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-wrapper">
+            <div class="period-selector">
+                <button class="active" data-period="1y">近1年</button>
+                <button data-period="6m">近6月</button>
+                <button data-period="3m">近3月</button>
+                <button data-period="1m">近1月</button>
+            </div>
+            <div id="klineChart"></div>
+        </div>
+        <div class="chart-wrapper">
+            <div id="volumeChart"></div>
+        </div>
+        <div class="footer">
+            数据来源：Tushare Pro · 数据更新至 2026-07-10
+        </div>
+    </div>
+
+    <script>
+        // ====== RAW DATA ======
+        const rawData = [
+            { date: '2025-07-14', open: 33.57, high: 33.84, low: 33.30, close: 33.71, vol: 17153.36, amount: 57524740 },
+            { date: '2025-07-15', open: 33.50, high: 35.25, low: 33.40, close: 34.69, vol: 49743.27, amount: 171600158 },
+            { date: '2025-07-16', open: 35.31, high: 35.66, low: 34.77, close: 35.06, vol: 50873.74, amount: 179212422 },
+            { date: '2025-07-17', open: 34.91, high: 35.88, low: 34.46, close: 35.40, vol: 40771.53, amount: 143511301 },
+            { date: '2025-07-18', open: 35.30, high: 35.45, low: 34.71, close: 34.81, vol: 22494.40, amount: 78665307 },
+            { date: '2025-07-21', open: 34.82, high: 35.06, low: 34.47, close: 34.81, vol: 21193.23, amount: 73654163 },
+            { date: '2025-07-22', open: 34.79, high: 35.18, low: 34.52, close: 34.77, vol: 21644.85, amount: 75432536 },
+            { date: '2025-07-23', open: 34.60, high: 34.77, low: 34.02, close: 34.10, vol: 20841.74, amount: 71329956 },
+            { date: '2025-07-24', open: 34.10, high: 35.20, low: 34.06, close: 34.71, vol: 21753.88, amount: 75482856 },
+            { date: '2025-07-25', open: 34.60, high: 38.18, low: 34.60, close: 38.18, vol: 94582.34, amount: 348657736 },
+            { date: '2025-07-28', open: 37.92, high: 40.16, low: 37.84, close: 39.99, vol: 153687.61, amount: 605104792 },
+            { date: '2025-07-29', open: 39.45, high: 40.68, low: 39.19, close: 39.57, vol: 82187.93, amount: 326009944 },
+            { date: '2025-07-30', open: 39.55, high: 41.27, low: 38.95, close: 39.93, vol: 83269.90, amount: 334950200 },
+            { date: '2025-07-31', open: 42.63, high: 43.92, low: 39.11, close: 39.63, vol: 237983.51, amount: 1019151281 },
+            { date: '2025-08-01', open: 38.92, high: 41.53, low: 38.82, close: 39.70, vol: 140243.76, amount: 564540936 },
+            { date: '2025-08-04', open: 39.00, high: 42.26, low: 38.55, close: 41.84, vol: 119493.05, amount: 485272489 },
+            { date: '2025-08-05', open: 42.06, high: 42.99, low: 41.45, close: 42.31, vol: 109124.81, amount: 459897696 },
+            { date: '2025-08-06', open: 42.33, high: 46.54, low: 42.33, close: 46.54, vol: 137379.40, amount: 612615326 },
+            { date: '2025-08-07', open: 46.55, high: 50.90, low: 45.76, close: 49.10, vol: 188462.76, amount: 911921975 },
+            { date: '2025-08-08', open: 47.00, high: 48.24, low: 46.00, close: 46.31, vol: 120906.63, amount: 569755979 },
+            { date: '2025-08-11', open: 45.89, high: 45.99, low: 43.51, close: 44.01, vol: 141401.92, amount: 626433134 },
+            { date: '2025-08-12', open: 44.00, high: 44.13, low: 43.18, close: 44.00, vol: 72594.57, amount: 316184025 },
+            { date: '2025-08-13', open: 44.26, high: 48.40, low: 43.18, close: 48.40, vol: 135013.83, amount: 619033449 },
+            { date: '2025-08-14', open: 50.04, high: 52.15, low: 47.00, close: 48.50, vol: 182739.68, amount: 902478330 },
+            { date: '2025-08-15', open: 48.80, high: 50.38, low: 47.51, close: 50.05, vol: 122710.14, amount: 605813746 },
+            { date: '2025-08-18', open: 51.10, high: 52.99, low: 49.84, close: 50.29, vol: 139570.41, amount: 717447945 },
+            { date: '2025-08-19', open: 50.01, high: 51.62, low: 49.34, close: 50.40, vol: 86188.61, amount: 434135508 },
+            { date: '2025-08-20', open: 49.00, high: 50.21, low: 47.85, close: 48.26, vol: 87246.79, amount: 424328693 },
+            { date: '2025-08-21', open: 48.12, high: 48.45, low: 46.80, close: 47.76, vol: 60086.16, amount: 286174690 },
+            { date: '2025-08-22', open: 47.79, high: 48.00, low: 46.79, close: 46.83, vol: 59871.53, amount: 281958028 },
+            { date: '2025-08-25', open: 47.25, high: 49.98, low: 47.00, close: 48.02, vol: 94092.71, amount: 455462042 },
+            { date: '2025-08-26', open: 47.11, high: 48.03, low: 47.11, close: 47.44, vol: 45373.54, amount: 215740450 },
+            { date: '2025-08-27', open: 47.40, high: 48.86, low: 46.30, close: 46.30, vol: 59605.19, amount: 284433479 },
+            { date: '2025-08-28', open: 45.97, high: 47.75, low: 45.31, close: 47.71, vol: 59701.66, amount: 278419949 },
+            { date: '2025-08-29', open: 47.00, high: 48.16, low: 46.50, close: 48.00, vol: 49309.00, amount: 234109148 },
+            { date: '2025-09-01', open: 52.80, high: 52.80, low: 52.80, close: 52.80, vol: 39204.17, amount: 206998018 },
+            { date: '2025-09-02', open: 58.08, high: 58.08, low: 58.08, close: 58.08, vol: 20087.40, amount: 116667619 },
+            { date: '2025-09-03', open: 63.89, high: 63.89, low: 59.93, close: 63.89, vol: 252853.94, amount: 1592918385 },
+            { date: '2025-09-04', open: 65.12, high: 67.99, low: 60.61, close: 62.79, vol: 281741.04, amount: 1803908002 },
+            { date: '2025-09-05', open: 61.80, high: 62.05, low: 56.53, close: 59.60, vol: 194036.23, amount: 1137607985 },
+            { date: '2025-09-08', open: 63.77, high: 63.77, low: 56.00, close: 57.60, vol: 152322.37, amount: 889137787 },
+            { date: '2025-09-09', open: 57.01, high: 58.37, low: 55.21, close: 56.00, vol: 93470.56, amount: 529044928 },
+            { date: '2025-09-10', open: 57.75, high: 61.60, low: 56.10, close: 61.60, vol: 158094.90, amount: 935108608 },
+            { date: '2025-09-11', open: 62.06, high: 63.55, low: 60.30, close: 62.68, vol: 192172.31, amount: 1190990902 },
+            { date: '2025-09-12', open: 63.31, high: 64.47, low: 60.89, close: 61.93, vol: 147058.45, amount: 924751406 },
+            { date: '2025-09-15', open: 60.40, high: 61.94, low: 59.93, close: 61.06, vol: 92452.67, amount: 563205120 },
+            { date: '2025-09-16', open: 61.00, high: 63.68, low: 60.00, close: 61.78, vol: 110684.32, amount: 687458470 },
+            { date: '2025-09-17', open: 61.21, high: 64.35, low: 60.50, close: 63.44, vol: 127248.78, amount: 795400516 },
+            { date: '2025-09-18', open: 66.31, high: 69.78, low: 64.50, close: 69.78, vol: 215828.78, amount: 1476851506 },
+            { date: '2025-09-19', open: 68.80, high: 68.80, low: 62.80, close: 62.80, vol: 184434.82, amount: 1197465372 },
+            { date: '2025-09-22', open: 62.81, high: 64.38, low: 62.05, close: 63.90, vol: 95632.85, amount: 606987579 },
+            { date: '2025-09-23', open: 65.50, high: 65.80, low: 59.50, close: 60.90, vol: 105953.20, amount: 655746280 },
+            { date: '2025-09-24', open: 60.01, high: 62.30, low: 58.81, close: 61.84, vol: 77671.92, amount: 476860521 },
+            { date: '2025-09-25', open: 61.84, high: 64.32, low: 61.66, close: 62.22, vol: 58300.23, amount: 365317293 },
+            { date: '2025-09-26', open: 61.50, high: 62.45, low: 59.76, close: 59.76, vol: 54568.64, amount: 330883468 },
+            { date: '2025-09-29', open: 59.05, high: 61.20, low: 59.05, close: 60.45, vol: 33719.64, amount: 202526325 },
+            { date: '2025-09-30', open: 60.60, high: 61.50, low: 59.21, close: 60.32, vol: 46448.00, amount: 280085854 },
+            { date: '2025-10-09', open: 60.02, high: 60.82, low: 58.82, close: 59.70, vol: 47799.11, amount: 285966841 },
+            { date: '2025-10-10', open: 59.22, high: 62.22, low: 58.88, close: 59.02, vol: 45976.00, amount: 277852427 },
+            { date: '2025-10-13', open: 54.43, high: 58.35, low: 54.00, close: 57.90, vol: 48769.56, amount: 275980727 },
+            { date: '2025-10-14', open: 58.01, high: 58.80, low: 55.59, close: 55.84, vol: 41993.00, amount: 238687396 },
+            { date: '2025-10-15', open: 56.84, high: 57.40, low: 55.60, close: 57.40, vol: 31807.37, amount: 180663645 },
+            { date: '2025-10-16', open: 57.40, high: 57.42, low: 55.91, close: 56.31, vol: 22589.40, amount: 128026728 },
+            { date: '2025-10-17', open: 56.34, high: 56.48, low: 53.41, close: 53.48, vol: 36203.79, amount: 196856036 },
+            { date: '2025-10-20', open: 54.25, high: 55.40, low: 54.03, close: 54.50, vol: 25711.92, amount: 140731164 },
+            { date: '2025-10-21', open: 54.80, high: 56.66, low: 54.34, close: 56.05, vol: 33854.00, amount: 188247253 },
+            { date: '2025-10-22', open: 55.86, high: 56.30, low: 55.25, close: 55.58, vol: 19529.82, amount: 108589470 },
+            { date: '2025-10-23', open: 55.03, high: 55.67, low: 53.82, close: 54.95, vol: 21271.00, amount: 115618893 },
+            { date: '2025-10-24', open: 54.90, high: 56.81, low: 54.90, close: 56.60, vol: 29938.82, amount: 167884958 },
+            { date: '2025-10-27', open: 58.00, high: 61.08, low: 56.80, close: 59.34, vol: 68265.00, amount: 402255735 },
+            { date: '2025-10-28', open: 59.35, high: 61.26, low: 59.00, close: 60.88, vol: 54491.00, amount: 329548416 },
+            { date: '2025-10-29', open: 60.28, high: 63.21, low: 59.80, close: 62.61, vol: 66299.82, amount: 411496583 },
+            { date: '2025-10-30', open: 68.87, high: 68.87, low: 67.80, close: 68.87, vol: 50550.37, amount: 348084885 },
+            { date: '2025-10-31', open: 69.98, high: 75.76, low: 65.89, close: 72.27, vol: 190163.59, amount: 1334452992 },
+            { date: '2025-11-03', open: 70.88, high: 71.50, low: 67.78, close: 70.50, vol: 114414.31, amount: 794548065 },
+            { date: '2025-11-04', open: 69.07, high: 71.00, low: 68.50, close: 69.32, vol: 70669.77, amount: 490722545 },
+            { date: '2025-11-05', open: 66.01, high: 70.02, low: 66.01, close: 69.33, vol: 70944.00, amount: 486644832 },
+            { date: '2025-11-06', open: 69.33, high: 76.26, low: 69.33, close: 76.26, vol: 115157.50, amount: 849922251 },
+            { date: '2025-11-07', open: 76.80, high: 78.50, low: 75.00, close: 75.68, vol: 91586.64, amount: 699782046 },
+            { date: '2025-11-10', open: 75.77, high: 77.00, low: 73.77, close: 76.06, vol: 65023.23, amount: 489778116 },
+            { date: '2025-11-11', open: 76.14, high: 78.34, low: 73.88, close: 74.81, vol: 55297.46, amount: 417631871 },
+            { date: '2025-11-12', open: 73.67, high: 79.77, low: 73.24, close: 79.30, vol: 97701.81, amount: 751321895 },
+            { date: '2025-11-13', open: 77.85, high: 79.47, low: 75.70, close: 78.18, vol: 70288.60, amount: 545264331 },
+            { date: '2025-11-14', open: 75.12, high: 76.25, low: 72.77, close: 73.70, vol: 70397.66, amount: 523076212 },
+            { date: '2025-11-17', open: 72.00, high: 75.75, low: 71.40, close: 73.80, vol: 58271.55, amount: 431683383 },
+            { date: '2025-11-18', open: 72.81, high: 75.18, low: 72.37, close: 73.64, vol: 41615.14, amount: 305097848 },
+            { date: '2025-11-19', open: 73.50, high: 74.20, low: 71.70, close: 72.82, vol: 35802.37, amount: 260148502 },
+            { date: '2025-11-20', open: 75.19, high: 75.93, low: 72.01, close: 73.17, vol: 46781.00, amount: 342974394 },
+            { date: '2025-11-21', open: 70.05, high: 71.97, low: 69.46, close: 69.55, vol: 43878.14, amount: 309437155 },
+            { date: '2025-11-24', open: 70.58, high: 70.89, low: 68.45, close: 70.00, vol: 40351.82, amount: 280868446 },
+            { date: '2025-11-25', open: 70.73, high: 77.00, low: 70.16, close: 77.00, vol: 64605.23, amount: 487273386 },
+            { date: '2025-11-26', open: 77.99, high: 79.84, low: 76.00, close: 77.03, vol: 106898.35, amount: 832094425 },
+            { date: '2025-11-27', open: 77.27, high: 84.73, low: 77.27, close: 83.00, vol: 172203.96, amount: 1421838333 },
+            { date: '2025-11-28', open: 81.44, high: 82.00, low: 78.03, close: 79.75, vol: 114911.00, amount: 913370626 },
+            { date: '2025-12-01', open: 77.99, high: 78.93, low: 76.00, close: 76.68, vol: 78982.00, amount: 608455934 },
+            { date: '2025-12-02', open: 76.22, high: 76.37, low: 73.98, close: 74.82, vol: 53216.95, amount: 398482140 },
+            { date: '2025-12-03', open: 74.60, high: 75.47, low: 73.45, close: 74.88, vol: 51051.00, amount: 378883149 },
+            { date: '2025-12-04', open: 75.15, high: 75.60, low: 72.12, close: 72.31, vol: 64027.95, amount: 469974299 },
+            { date: '2025-12-05', open: 72.30, high: 76.18, low: 71.28, close: 73.40, vol: 74285.00, amount: 548767143 },
+            { date: '2025-12-08', open: 73.48, high: 76.26, low: 72.60, close: 75.45, vol: 63319.00, amount: 474311665 },
+            { date: '2025-12-09', open: 73.00, high: 77.80, low: 72.57, close: 77.10, vol: 93061.60, amount: 703316380 },
+            { date: '2025-12-10', open: 77.09, high: 77.10, low: 72.45, close: 75.96, vol: 77352.17, amount: 577297796 },
+            { date: '2025-12-11', open: 76.80, high: 76.80, low: 73.51, close: 73.63, vol: 40922.00, amount: 305643863 },
+            { date: '2025-12-12', open: 73.50, high: 73.72, low: 71.05, close: 72.58, vol: 53844.00, amount: 389776215 },
+            { date: '2025-12-15', open: 71.64, high: 71.80, low: 69.73, close: 70.67, vol: 42846.94, amount: 302848274 },
+            { date: '2025-12-16', open: 70.01, high: 70.86, low: 68.10, close: 69.10, vol: 32028.14, amount: 221501968 },
+            { date: '2025-12-17', open: 69.78, high: 74.75, low: 69.25, close: 74.75, vol: 77096.64, amount: 556255132 },
+            { date: '2025-12-18', open: 73.00, high: 74.47, low: 71.27, close: 73.36, vol: 66826.00, amount: 489011293 },
+            { date: '2025-12-19', open: 74.68, high: 74.68, low: 72.61, close: 73.39, vol: 42923.00, amount: 316777789 },
+            { date: '2025-12-22', open: 74.51, high: 78.22, low: 74.30, close: 76.68, vol: 65786.64, amount: 506887846 },
+            { date: '2025-12-23', open: 76.58, high: 79.38, low: 76.15, close: 78.60, vol: 65102.83, amount: 508721405 },
+            { date: '2025-12-24', open: 80.01, high: 82.45, low: 78.60, close: 81.55, vol: 96753.53, amount: 780626743 },
+            { date: '2025-12-25', open: 80.11, high: 82.31, low: 80.07, close: 81.40, vol: 54521.68, amount: 441864707 },
+            { date: '2025-12-26', open: 80.60, high: 82.45, low: 79.85, close: 80.11, vol: 41746.48, amount: 336869732 },
+            { date: '2025-12-29', open: 79.76, high: 80.06, low: 77.88, close: 78.59, vol: 47170.20, amount: 371811304 },
+            { date: '2025-12-30', open: 78.42, high: 79.75, low: 77.72, close: 78.30, vol: 34613.28, amount: 271847890 },
+            { date: '2025-12-31', open: 78.66, high: 79.39, low: 76.76, close: 77.00, vol: 34716.60, amount: 269004226 },
+            { date: '2026-01-05', open: 77.45, high: 83.25, low: 77.45, close: 82.25, vol: 76909.94, amount: 626556733 },
+            { date: '2026-01-06', open: 82.16, high: 82.68, low: 79.88, close: 80.48, vol: 49864.77, amount: 403848440 },
+            { date: '2026-01-07', open: 79.77, high: 84.00, low: 79.60, close: 82.05, vol: 50123.57, amount: 411177930 },
+            { date: '2026-01-08', open: 82.00, high: 84.50, low: 80.52, close: 81.36, vol: 51317.51, amount: 423879222 },
+            { date: '2026-01-09', open: 80.52, high: 81.24, low: 79.00, close: 79.26, vol: 47650.45, amount: 379651506 },
+            { date: '2026-01-12', open: 80.00, high: 80.80, low: 77.57, close: 79.70, vol: 47942.00, amount: 379446331 },
+            { date: '2026-01-13', open: 79.32, high: 80.33, low: 77.00, close: 77.37, vol: 45545.77, amount: 357531566 },
+            { date: '2026-01-14', open: 77.66, high: 78.18, low: 75.28, close: 76.72, vol: 51231.00, amount: 392279339 },
+            { date: '2026-01-15', open: 75.54, high: 77.96, low: 75.30, close: 77.96, vol: 36221.00, amount: 278777595 },
+            { date: '2026-01-16', open: 78.78, high: 82.98, low: 78.39, close: 82.32, vol: 86964.98, amount: 704120926 },
+            { date: '2026-01-19', open: 82.51, high: 84.28, low: 80.70, close: 82.75, vol: 51492.00, amount: 426964671 },
+            { date: '2026-01-20', open: 82.77, high: 84.20, low: 80.88, close: 82.00, vol: 58193.23, amount: 477670290 },
+            { date: '2026-01-21', open: 81.27, high: 85.76, low: 80.56, close: 83.78, vol: 59220.78, amount: 492609636 },
+            { date: '2026-01-22', open: 83.86, high: 86.15, low: 80.63, close: 83.44, vol: 44844.04, amount: 369668545 },
+            { date: '2026-01-23', open: 82.06, high: 86.00, low: 81.66, close: 84.96, vol: 58766.10, amount: 492125145 },
+            { date: '2026-01-26', open: 86.57, high: 91.00, low: 82.45, close: 83.90, vol: 84769.70, amount: 735447304 },
+            { date: '2026-01-27', open: 84.01, high: 85.58, low: 80.00, close: 84.21, vol: 58182.00, amount: 482054401 },
+            { date: '2026-01-28', open: 84.85, high: 84.95, low: 81.12, close: 82.80, vol: 56628.00, amount: 469344245 },
+            { date: '2026-01-29', open: 82.25, high: 85.00, low: 79.50, close: 80.21, vol: 64484.01, amount: 525541310 },
+            { date: '2026-01-30', open: 79.61, high: 82.68, low: 78.00, close: 82.66, vol: 61031.52, amount: 492941345 },
+            { date: '2026-02-02', open: 81.84, high: 85.18, low: 76.95, close: 76.98, vol: 86458.82, amount: 689270297 },
+            { date: '2026-02-03', open: 78.16, high: 80.50, low: 76.23, close: 80.02, vol: 67822.29, amount: 533963155 },
+            { date: '2026-02-04', open: 79.72, high: 80.91, low: 78.80, close: 80.05, vol: 46657.38, amount: 372532056 },
+            { date: '2026-02-05', open: 80.00, high: 80.33, low: 76.33, close: 77.80, vol: 44298.50, amount: 344543041 },
+            { date: '2026-02-06', open: 76.93, high: 79.80, low: 75.90, close: 76.46, vol: 36904.01, amount: 286369190 },
+            { date: '2026-02-09', open: 77.98, high: 78.68, low: 75.75, close: 77.20, vol: 49712.75, amount: 384396155 },
+            { date: '2026-02-10', open: 76.41, high: 78.52, low: 76.41, close: 76.97, vol: 35582.05, amount: 275595980 },
+            { date: '2026-02-11', open: 76.88, high: 77.41, low: 74.88, close: 75.48, vol: 36574.00, amount: 276786445 },
+            { date: '2026-02-12', open: 76.00, high: 83.03, low: 76.00, close: 83.03, vol: 84092.79, amount: 685570119 },
+            { date: '2026-02-13', open: 83.00, high: 87.20, low: 81.00, close: 83.91, vol: 99967.51, amount: 849441255 },
+            { date: '2026-02-24', open: 85.00, high: 85.36, low: 81.28, close: 81.65, vol: 64023.60, amount: 528169760 },
+            { date: '2026-02-25', open: 81.66, high: 83.60, low: 80.57, close: 83.60, vol: 62784.00, amount: 516961173 },
+            { date: '2026-02-26', open: 83.63, high: 87.93, low: 83.10, close: 86.71, vol: 73130.43, amount: 627622994 },
+            { date: '2026-02-27', open: 84.60, high: 84.64, low: 80.35, close: 81.57, vol: 89111.20, amount: 728503120 },
+            { date: '2026-03-02', open: 79.93, high: 82.46, low: 79.11, close: 79.63, vol: 60432.00, amount: 488376494 },
+            { date: '2026-03-03', open: 80.27, high: 85.44, low: 79.42, close: 79.60, vol: 68625.34, amount: 560676169 },
+            { date: '2026-03-04', open: 77.55, high: 80.55, low: 76.30, close: 78.76, vol: 39684.06, amount: 311786014 },
+            { date: '2026-03-05', open: 80.03, high: 81.15, low: 78.16, close: 78.72, vol: 45793.04, amount: 365684867 },
+            { date: '2026-03-06', open: 78.00, high: 79.58, low: 77.00, close: 77.49, vol: 35466.17, amount: 276421287 },
+            { date: '2026-03-09', open: 75.35, high: 75.42, low: 71.56, close: 73.81, vol: 52149.01, amount: 380714831 },
+            { date: '2026-03-10', open: 75.64, high: 78.10, low: 75.64, close: 77.22, vol: 42652.04, amount: 328852789 },
+            { date: '2026-03-11', open: 77.00, high: 81.78, low: 77.00, close: 77.61, vol: 50487.00, amount: 398734327 },
+            { date: '2026-03-12', open: 78.28, high: 79.95, low: 76.60, close: 78.80, vol: 46736.00, amount: 365954208 },
+            { date: '2026-03-13', open: 78.01, high: 78.49, low: 75.01, close: 75.06, vol: 34763.00, amount: 264907987 },
+            { date: '2026-03-16', open: 74.99, high: 75.10, low: 72.72, close: 74.34, vol: 29559.00, amount: 217701588 },
+            { date: '2026-03-17', open: 74.98, high: 75.09, low: 70.60, close: 70.69, vol: 47525.00, amount: 340836040 },
+            { date: '2026-03-18', open: 71.06, high: 74.50, low: 70.60, close: 74.00, vol: 38517.28, amount: 279470100 },
+            { date: '2026-03-19', open: 72.83, high: 74.32, low: 72.16, close: 72.53, vol: 33166.62, amount: 243209919 },
+            { date: '2026-03-20', open: 73.04, high: 74.59, low: 70.61, close: 70.61, vol: 31372.05, amount: 227198047 },
+            { date: '2026-03-23', open: 69.00, high: 69.50, low: 65.60, close: 65.95, vol: 47060.00, amount: 316544515 },
+            { date: '2026-03-24', open: 67.71, high: 68.48, low: 65.80, close: 68.46, vol: 29296.00, amount: 196367147 },
+            { date: '2026-03-25', open: 69.47, high: 72.86, low: 68.90, close: 71.68, vol: 41312.00, amount: 295823334 },
+            { date: '2026-03-26', open: 71.72, high: 72.35, low: 70.22, close: 70.75, vol: 21544.90, amount: 153491139 },
+            { date: '2026-03-27', open: 69.66, high: 72.85, low: 68.70, close: 71.66, vol: 25672.25, amount: 182363198 },
+            { date: '2026-03-30', open: 70.60, high: 74.04, low: 70.00, close: 72.10, vol: 30223.77, amount: 216542837 },
+            { date: '2026-03-31', open: 72.08, high: 72.66, low: 70.11, close: 70.20, vol: 30163.88, amount: 214792642 },
+            { date: '2026-04-01', open: 72.16, high: 73.06, low: 70.68, close: 71.56, vol: 30305.70, amount: 216869580 },
+            { date: '2026-04-02', open: 71.20, high: 71.28, low: 69.01, close: 69.44, vol: 25153.00, amount: 175849551 },
+            { date: '2026-04-03', open: 69.72, high: 70.38, low: 69.20, close: 69.26, vol: 18740.55, amount: 130723237 },
+            { date: '2026-04-07', open: 70.86, high: 73.00, low: 70.86, close: 71.82, vol: 41467.35, amount: 299529634 },
+            { date: '2026-04-08', open: 73.74, high: 79.00, low: 73.22, close: 79.00, vol: 104622.11, amount: 806382303 },
+            { date: '2026-04-09', open: 83.21, high: 86.90, low: 81.76, close: 86.90, vol: 114848.92, amount: 982113709 },
+            { date: '2026-04-10', open: 86.64, high: 90.67, low: 86.52, close: 88.63, vol: 229108.13, amount: 2037508175 },
+            { date: '2026-04-13', open: 88.80, high: 93.00, low: 87.03, close: 88.26, vol: 132088.52, amount: 1179963856 },
+            { date: '2026-04-14', open: 88.29, high: 88.80, low: 86.38, close: 87.20, vol: 93011.88, amount: 812731516 },
+            { date: '2026-04-15', open: 87.72, high: 90.87, low: 86.75, close: 86.92, vol: 91552.05, amount: 816272370 },
+            { date: '2026-04-16', open: 86.66, high: 91.66, low: 86.16, close: 90.88, vol: 107134.10, amount: 957414598 },
+            { date: '2026-04-17', open: 96.00, high: 99.97, low: 91.00, close: 99.97, vol: 136934.16, amount: 1315139358 },
+            { date: '2026-04-20', open: 98.00, high: 98.50, low: 92.33, close: 95.10, vol: 162521.26, amount: 1546226142 },
+            { date: '2026-04-21', open: 93.20, high: 101.10, low: 92.21, close: 98.83, vol: 156057.54, amount: 1522635312 },
+            { date: '2026-04-22', open: 98.85, high: 106.19, low: 98.85, close: 105.54, vol: 124029.30, amount: 1278165191 },
+            { date: '2026-04-23', open: 106.80, high: 115.50, low: 105.00, close: 112.61, vol: 148362.54, amount: 1671141431 },
+            { date: '2026-04-24', open: 112.30, high: 119.50, low: 112.30, close: 115.73, vol: 158794.56, amount: 1842624044 },
+            { date: '2026-04-27', open: 118.51, high: 123.43, low: 115.00, close: 117.26, vol: 144359.29, amount: 1711899738 },
+            { date: '2026-04-28', open: 117.29, high: 119.98, low: 113.36, close: 114.47, vol: 120295.00, amount: 1388874086 },
+            { date: '2026-04-29', open: 113.50, high: 114.47, low: 107.58, close: 110.11, vol: 125121.30, amount: 1380366217 },
+            { date: '2026-04-30', open: 111.25, high: 112.86, low: 107.90, close: 110.38, vol: 90732.00, amount: 992985746 },
+            { date: '2026-05-06', open: 115.00, high: 121.42, low: 113.97, close: 120.46, vol: 118752.40, amount: 1406150640 },
+            { date: '2026-05-07', open: 120.02, high: 124.99, low: 118.10, close: 124.40, vol: 99421.00, amount: 1208776015 },
+            { date: '2026-05-08', open: 121.40, high: 127.64, low: 119.10, close: 124.45, vol: 109185.47, amount: 1352849997 },
+            { date: '2026-05-11', open: 100.29, high: 105.44, low: 100.00, close: 105.44, vol: 67978.76, amount: 707220968 },
+            { date: '2026-05-12', open: 110.79, high: 114.80, low: 106.50, close: 111.49, vol: 224288.63, amount: 2456855304 },
+            { date: '2026-05-13', open: 111.50, high: 113.44, low: 109.26, close: 111.56, vol: 142870.17, amount: 1588289675 },
+            { date: '2026-05-14', open: 111.80, high: 118.78, low: 108.68, close: 114.50, vol: 167132.79, amount: 1895389799 },
+            { date: '2026-05-15', open: 116.22, high: 123.85, low: 112.00, close: 114.99, vol: 203395.79, amount: 2397324932 },
+            { date: '2026-05-18', open: 117.14, high: 124.50, low: 116.88, close: 120.00, vol: 156000.03, amount: 1878518581 },
+            { date: '2026-05-19', open: 118.00, high: 121.00, low: 112.58, close: 119.10, vol: 140416.80, amount: 1636741169 },
+            { date: '2026-05-20', open: 119.10, high: 121.42, low: 117.00, close: 119.08, vol: 101338.69, amount: 1204184435 },
+            { date: '2026-05-21', open: 120.00, high: 121.00, low: 109.80, close: 110.50, vol: 145816.05, amount: 1675239861 },
+            { date: '2026-05-22', open: 111.90, high: 121.55, low: 111.90, close: 121.55, vol: 95140.79, amount: 1135188852 },
+            { date: '2026-05-25', open: 129.20, high: 133.71, low: 128.11, close: 133.71, vol: 119524.30, amount: 1592940409 },
+            { date: '2026-05-26', open: 138.70, high: 140.68, low: 125.00, close: 126.95, vol: 228131.20, amount: 3022011536 },
+            { date: '2026-05-27', open: 126.06, high: 127.20, low: 121.30, close: 122.07, vol: 147439.41, amount: 1826973954 },
+            { date: '2026-05-28', open: 121.38, high: 134.28, low: 118.00, close: 134.28, vol: 155777.70, amount: 1974465706 },
+            { date: '2026-05-29', open: 140.99, high: 147.71, low: 139.50, close: 144.30, vol: 242161.64, amount: 3533369728 },
+            { date: '2026-06-01', open: 148.96, high: 151.94, low: 134.77, close: 135.07, vol: 222829.30, amount: 3170285538 },
+            { date: '2026-06-02', open: 136.38, high: 148.58, low: 136.38, close: 148.58, vol: 60950.50, amount: 882897643 },
+            { date: '2026-06-03', open: 154.86, high: 157.97, low: 145.60, close: 148.00, vol: 202454.44, amount: 3070308000 },
+            { date: '2026-06-04', open: 144.99, high: 147.00, low: 141.86, close: 143.60, vol: 153147.87, amount: 2202378447 },
+            { date: '2026-06-05', open: 140.01, high: 143.08, low: 131.77, close: 132.32, vol: 171586.96, amount: 2330177345 },
+            { date: '2026-06-08', open: 123.77, high: 126.58, low: 119.09, close: 119.09, vol: 165115.15, amount: 2010887685 },
+            { date: '2026-06-09', open: 122.55, high: 127.99, low: 120.90, close: 126.94, vol: 132316.46, amount: 1646285850 },
+            { date: '2026-06-10', open: 124.89, high: 126.49, low: 118.79, close: 120.66, vol: 96445.26, amount: 1175994489 },
+            { date: '2026-06-11', open: 119.89, high: 128.25, low: 119.45, close: 122.62, vol: 117299.87, amount: 1451415760 },
+            { date: '2026-06-12', open: 128.90, high: 129.90, low: 120.58, close: 121.37, vol: 118271.30, amount: 1481355173 },
+            { date: '2026-06-15', open: 123.99, high: 133.51, low: 123.94, close: 133.51, vol: 104629.37, amount: 1358639940 },
+            { date: '2026-06-16', open: 136.00, high: 140.98, low: 135.46, close: 136.87, vol: 125794.60, amount: 1736484212 },
+            { date: '2026-06-17', open: 136.63, high: 147.25, low: 135.50, close: 142.57, vol: 132243.59, amount: 1883814931 },
+            { date: '2026-06-18', open: 140.85, high: 149.60, low: 130.00, close: 136.80, vol: 248222.51, amount: 3437373981 },
+            { date: '2026-06-22', open: 139.50, high: 150.48, low: 139.50, close: 150.48, vol: 196808.86, amount: 2866107033 },
+            { date: '2026-06-23', open: 149.96, high: 150.00, low: 137.19, close: 144.60, vol: 165370.85, amount: 2376139898 },
+            { date: '2026-06-24', open: 143.56, high: 152.70, low: 142.50, close: 151.32, vol: 167134.14, amount: 2480619155 },
+            { date: '2026-06-25', open: 150.00, high: 156.66, low: 145.60, close: 156.18, vol: 194795.47, amount: 2930562445 },
+            { date: '2026-06-26', open: 149.77, high: 155.54, low: 143.24, close: 144.43, vol: 124400.23, amount: 1847039581 },
+            { date: '2026-06-29', open: 144.03, high: 150.77, low: 132.80, close: 138.00, vol: 125423.05, amount: 1753255654 },
+            { date: '2026-06-30', open: 137.00, high: 143.98, low: 133.50, close: 142.00, vol: 90045.10, amount: 1255876016 },
+            { date: '2026-07-01', open: 140.58, high: 143.39, low: 134.60, close: 135.40, vol: 88426.87, amount: 1222039559 },
+            { date: '2026-07-02', open: 130.01, high: 131.40, low: 122.57, close: 123.69, vol: 93979.83, amount: 1191502081 },
+            { date: '2026-07-03', open: 122.05, high: 126.50, low: 119.00, close: 122.40, vol: 70341.94, amount: 863009423 },
+            { date: '2026-07-06', open: 121.00, high: 126.59, low: 116.60, close: 120.44, vol: 75153.04, amount: 913530023 },
+            { date: '2026-07-07', open: 119.71, high: 121.50, low: 113.14, close: 115.64, vol: 64775.22, amount: 756010948 },
+            { date: '2026-07-08', open: 117.00, high: 118.18, low: 109.47, close: 110.32, vol: 63474.19, amount: 717027447 },
+            { date: '2026-07-09', open: 113.00, high: 121.35, low: 111.45, close: 121.35, vol: 91606.55, amount: 1066363916 },
+            { date: '2026-07-10', open: 123.53, high: 130.30, low: 120.80, close: 120.80, vol: 126733.14, amount: 1595249507 }
+        ];
+
+        // 红涨绿跌（A股惯例）
+        const UP_COLOR = '#e74c3c';
+        const DOWN_COLOR = '#27ae60';
+        const VOL_UP_COLOR = 'rgba(231, 76, 60, 0.4)';
+        const VOL_DOWN_COLOR = 'rgba(39, 174, 96, 0.4)';
+        const MA5_COLOR = '#f39c12';
+        const MA10_COLOR = '#3498db';
+        const MA20_COLOR = '#9b59b6';
+
+        // 计算统计
+        const first = rawData[0];
+        const last = rawData[rawData.length - 1];
+        const yearReturn = ((last.close - first.close) / first.close * 100);
+        const highs = rawData.map(d => d.high);
+        const lows = rawData.map(d => d.low);
+        const yearHigh = Math.max(...highs);
+        const yearLow = Math.min(...lows);
+        const avgVol = rawData.reduce((s, d) => s + d.vol, 0) / rawData.length;
+
+        document.getElementById('yearReturn').textContent = (yearReturn >= 0 ? '+' : '') + yearReturn.toFixed(1) + '%';
+        document.getElementById('yearReturn').className = 'value' + (yearReturn >= 0 ? ' up' : ' down');
+        document.getElementById('yearHigh').textContent = yearHigh.toFixed(2);
+        document.getElementById('yearLow').textContent = yearLow.toFixed(2);
+        document.getElementById('avgTurnover').textContent = (avgVol / 10000).toFixed(1) + '万手';
+        document.getElementById('dateRange').textContent = rawData[0].date + ' ~ ' + rawData[rawData.length - 1].date;
+
+        const priceEl = document.querySelector('#headerPrice .price');
+        const chgEl = document.querySelector('#headerPrice .change');
+        const lastChg = last.close - (rawData.length > 1 ? rawData[rawData.length - 2].close : last.open);
+        const lastPct = lastChg / (rawData.length > 1 ? rawData[rawData.length - 2].close : last.open) * 100;
+        priceEl.textContent = last.close.toFixed(2);
+        priceEl.className = 'price ' + (lastChg >= 0 ? 'up' : 'down');
+        chgEl.textContent = (lastChg >= 0 ? '+' : '') + lastChg.toFixed(2) + ' (' + (lastPct >= 0 ? '+' : '') + lastPct.toFixed(2) + '%)';
+        chgEl.className = 'change ' + (lastChg >= 0 ? 'up' : 'down');
+
+        // 准备图表数据
+        function filterData(period) {
+            const now = new Date(rawData[rawData.length - 1].date);
+            let cutoff;
+            switch (period) {
+                case '1m':
+                    cutoff = new Date(now);
+                    cutoff.setMonth(cutoff.getMonth() - 1);
+                    break;
+                case '3m':
+                    cutoff = new Date(now);
+                    cutoff.setMonth(cutoff.getMonth() - 3);
+                    break;
+                case '6m':
+                    cutoff = new Date(now);
+                    cutoff.setMonth(cutoff.getMonth() - 6);
+                    break;
+                default:
+                    return rawData;
+            }
+            return rawData.filter(d => new Date(d.date) >= cutoff);
+        }
+
+        function buildOption(data) {
+            const dates = data.map(d => d.date.slice(5));
+            const klineData = data.map(d => [d.open, d.close, d.low, d.high]);
+            const volumes = data.map(d => d.vol);
+            const colors = data.map(d => d.close >= d.open ? UP_COLOR : DOWN_COLOR);
+
+            // MA 计算
+            function calcMA(data, days) {
+                const result = [];
+                for (let i = 0; i < data.length; i++) {
+                    if (i < days - 1) {
+                        result.push('-');
+                    } else {
+                        let sum = 0;
+                        for (let j = i - days + 1; j <= i; j++) {
+                            sum += data[j].close;
+                        }
+                        result.push(+(sum / days).toFixed(2));
+                    }
+                }
+                return result;
+            }
+
+            const ma5 = calcMA(data, 5);
+            const ma10 = calcMA(data, 10);
+            const ma20 = calcMA(data, 20);
+
+            return {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross' },
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    textStyle: { color: '#333', fontSize: 12 },
+                    formatter: function(params) {
+                        const idx = params[0].dataIndex;
+                        const d = data[idx];
+                        const prevClose = idx > 0 ? data[idx - 1].close : d.open;
+                        let html = '<strong style="font-size:14px;">' + d.date + '</strong><br/>';
+                        html += '开盘: ' + d.open.toFixed(2) + '<br/>';
+                        html += '收盘: ' + d.close.toFixed(2) + '<br/>';
+                        html += '最高: ' + d.high.toFixed(2) + '<br/>';
+                        html += '最低: ' + d.low.toFixed(2) + '<br/>';
+                        const chg = d.close - prevClose;
+                        const pct = chg / prevClose * 100;
+                        html += '涨跌: <span style="color:' + (chg >= 0 ? UP_COLOR : DOWN_COLOR) + '">' +
+                            (chg >= 0 ? '+' : '') + chg.toFixed(2) + ' (' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%)</span><br/>';
+                        html += '成交量: ' + (d.vol / 10000).toFixed(2) + '万手<br/>';
+                        html += '成交额: ' + (d.amount / 100000000).toFixed(2) + '亿';
+                        return html;
+                    }
+                },
+                grid: { left: '6%', right: '3%', top: '12%', bottom: '2%' },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    axisLine: { onZero: false },
+                    axisLabel: {
+                        fontSize: 11,
+                        color: '#999',
+                        interval: Math.max(Math.floor(data.length / 12), 1)
+                    },
+                    splitLine: { show: false },
+                    min: 'dataMin',
+                    max: 'dataMax'
+                },
+                yAxis: {
+                    scale: true,
+                    splitArea: { show: true, areaStyle: { color: ['rgba(250,250,250,0.3)', 'rgba(200,200,200,0.1)'] } },
+                    axisLabel: { fontSize: 11, color: '#999' },
+                    splitLine: { lineStyle: { color: '#eee', type: 'dashed' } }
+                },
+                dataZoom: [{
+                    type: 'inside',
+                    start: 0,
+                    end: 100,
+                    minValueSpan: 10
+                }],
+                series: [{
+                    name: 'K线',
+                    type: 'candlestick',
+                    data: klineData,
+                    itemStyle: {
+                        color: UP_COLOR,
+                        color0: DOWN_COLOR,
+                        borderColor: UP_COLOR,
+                        borderColor0: DOWN_COLOR
+                    },
+                    markPoint: {
+                        data: [{
+                                name: '最高',
+                                type: 'max',
+                                valueDim: 'highest',
+                                symbol: 'pin',
+                                symbolSize: 40,
+                                label: { formatter: '{c}', fontSize: 10, color: '#333' },
+                                itemStyle: { color: '#e74c3c' }
+                            },
+                            {
+                                name: '最低',
+                                type: 'min',
+                                valueDim: 'lowest',
+                                symbol: 'pin',
+                                symbolSize: 40,
+                                label: { formatter: '{c}', fontSize: 10, color: '#333' },
+                                itemStyle: { color: '#27ae60' }
+                            }
+                        ]
+                    },
+                    markLine: {
+                        silent: true,
+                        data: [{
+                            yAxis: last.close,
+                            label: {
+                                formatter: '收盘 ' + last.close.toFixed(2),
+                                position: 'end',
+                                fontSize: 11,
+                                color: '#666'
+                            },
+                            lineStyle: { color: '#999', type: 'dashed', width: 1 }
+                        }]
+                    }
+                }, {
+                    name: 'MA5',
+                    type: 'line',
+                    data: ma5,
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: { width: 1.5, color: MA5_COLOR },
+                    itemStyle: { color: MA5_COLOR }
+                }, {
+                    name: 'MA10',
+                    type: 'line',
+                    data: ma10,
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: { width: 1.5, color: MA10_COLOR },
+                    itemStyle: { color: MA10_COLOR }
+                }, {
+                    name: 'MA20',
+                    type: 'line',
+                    data: ma20,
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: { width: 1.5, color: MA20_COLOR },
+                    itemStyle: { color: MA20_COLOR }
+                }]
+            };
+        }
+
+        function buildVolumeOption(data) {
+            const dates = data.map(d => d.date.slice(5));
+            const volumes = data.map(d => d.vol);
+            const colors = data.map(d => d.close >= d.open ? VOL_UP_COLOR : VOL_DOWN_COLOR);
+            // 计算5日均量
+            const volMA5 = [];
+            for (let i = 0; i < volumes.length; i++) {
+                if (i < 4) { volMA5.push('-'); } else {
+                    let sum = 0;
+                    for (let j = i - 4; j <= i; j++) sum += volumes[j];
+                    volMA5.push(+(sum / 5).toFixed(0));
+                }
+            }
+
+            return {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    textStyle: { color: '#333', fontSize: 12 },
+                    formatter: function(params) {
+                        const idx = params[0].dataIndex;
+                        const d = data[idx];
+                        return '<strong>' + d.date + '</strong><br/>' +
+                            '成交量: ' + (d.vol / 10000).toFixed(2) + '万手<br/>' +
+                            '成交额: ' + (d.amount / 100000000).toFixed(2) + '亿';
+                    }
+                },
+                grid: { left: '6%', right: '3%', top: '8%', bottom: '2%' },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    axisLabel: {
+                        fontSize: 11,
+                        color: '#999',
+                        interval: Math.max(Math.floor(data.length / 12), 1)
+                    },
+                    splitLine: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: {
+                        fontSize: 11,
+                        color: '#999',
+                        formatter: function(v) { return (v / 10000).toFixed(0) + '万'; }
+                    },
+                    splitLine: { lineStyle: { color: '#eee', type: 'dashed' } }
+                },
+                dataZoom: [{
+                    type: 'inside',
+                    start: 0,
+                    end: 100,
+                    minValueSpan: 10
+                }],
+                series: [{
+                    name: '成交量',
+                    type: 'bar',
+                    data: volumes.map((v, i) => ({
+                        value: v,
+                        itemStyle: { color: colors[i] }
+                    })),
+                    barWidth: '60%'
+                }, {
+                    name: 'MA5(量)',
+                    type: 'line',
+                    data: volMA5,
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: { width: 1.5, color: '#e67e22' },
+                    itemStyle: { color: '#e67e22' }
+                }]
+            };
+        }
+
+        // 渲染图表
+        const klineChart = echarts.init(document.getElementById('klineChart'));
+        const volumeChart = echarts.init(document.getElementById('volumeChart'));
+
+        let currentData = rawData;
+        klineChart.setOption(buildOption(currentData));
+        volumeChart.setOption(buildVolumeOption(currentData));
+
+        // 联动
+        klineChart.group = 'group1';
+        volumeChart.group = 'group1';
+        echarts.connect('group1');
+
+        // 周期切换
+        document.querySelectorAll('.period-selector button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.period-selector button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const period = this.dataset.period;
+                currentData = filterData(period);
+                klineChart.setOption(buildOption(currentData), true);
+                volumeChart.setOption(buildVolumeOption(currentData), true);
+            });
+        });
+
+        // 自适应
+        window.addEventListener('resize', function() {
+            klineChart.resize();
+            volumeChart.resize();
+        });
+    </script>
+</body>
+</html>

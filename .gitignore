@@ -1,0 +1,7 @@
+/.workbuddy/
+.agents/
+.codex/
+__pycache__/
+*.pyc
+.env*
+*.token

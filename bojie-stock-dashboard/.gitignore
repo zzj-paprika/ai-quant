@@ -1,0 +1,4 @@
+.codex/
+*.token
+.env*
+__pycache__/
